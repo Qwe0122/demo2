@@ -9,7 +9,7 @@ public class Demo2Application {
 
     public static void main(String[] args) {
         String string = """
-                jfdjfjjf\s
+                jfdjfjjf 12334
                 kfjkfjk
                 lfkkfkfkk
                 """;
