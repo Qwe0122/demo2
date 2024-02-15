@@ -1,16 +1,21 @@
 package com.example.demo;
 
+import com.example.demo.command.FileExecutor;
+import com.example.demo.command.ReadCommand;
+import com.example.demo.command.TextFileWrite;
+import com.example.demo.model.TextFile;
+
 public class Demo2Application {
 
     public static void main(String[] args) {
-        /*
-         * Создание таблицы юзеров
-         *Добавление 4 юзеров в таблицу с данными на свой выбор. После каждого добавления должен быть вывод в консоль (User с именем — name добавлен в базу данных)
-         *Получение всех User из базы и вывод в консоль (должен быть переопределен toString в классе User)
-         *Очистка таблицы юзеров
-         *Удаление таблицы
-         *
-         * */
+        String string = """
+                jfdjfjjf\s
+                kfjkfjk
+                lfkkfkfkk
+                """;
+        FileExecutor fileExecutor = new FileExecutor();
+        TextFile textFile = fileExecutor.executeOperation(new TextFileWrite(string, new TextFile("hfhfh")));
+        System.out.println(fileExecutor.executeOperation(new ReadCommand(textFile)));
     }
 
 }
