@@ -3,7 +3,7 @@ package com.example.demo.model;
 import java.io.*;
 import java.util.Scanner;
 
-public class TextFile {
+public class TextFile{
     private final String fileName;
 
 

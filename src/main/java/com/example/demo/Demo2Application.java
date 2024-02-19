@@ -4,10 +4,18 @@ import com.example.demo.command.FileExecutor;
 import com.example.demo.command.ReadCommand;
 import com.example.demo.command.TextFileWrite;
 import com.example.demo.model.TextFile;
+import com.example.demo.visitor.ElementVisitor;
+import com.example.demo.visitor.UserElement;
+import com.example.demo.visitor.Visitor;
 
 public class Demo2Application {
 
     public static void main(String[] args) {
+
+        Visitor visitor = new ElementVisitor();
+        visitor.accept(new UserElement("GGGhds"));
+        visitor.accept(new UserElement("yeryry("));
+
         String string = """
                 jfdjfjjf 12334
                 kfjkfjk
