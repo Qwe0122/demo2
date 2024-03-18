@@ -1,63 +1,58 @@
 package com.example.demo.service;
 
-import com.google.gson.*;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpResponseException;
+import com.example.demo.model.Block;
+import com.example.demo.repository.BlockRepository;
+import com.example.demo.repository.ParsedEventsRepository;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStreamReader;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl {
 
-    private String uri = "https://api.blockcypher.com/v1/btc/main/blocks/00000000000000000003dc20b868d17121303308f6bba329302e75913f0790db";
-    private String limit = "?txstart=0&limit=2000";
-    private final CloseableHttpClient httpClient;
+    private final ParsedEventsRepository eventsRepository;
+    private final BlockRepository blockRepository;
 
-    public UserServiceImpl() {
-        this.httpClient = HttpClients.createDefault();
+
+    private final String uri = "https://blockchain.info/rawblock/";
+    private static final CloseableHttpClient httpClient;
+
+    static {
+        httpClient = HttpClients.createDefault();
     }
 
-    public List<String> getEvents() {
-        List<String> list = new ArrayList<>();
-        String nextUrl = uri+limit;
 
+    public void getEvents() {
+        Block block1 = blockRepository.findById(1L).get();
+        String nextUrl = uri + block1.getLastBlock();
         while (nextUrl != null) {
-            System.out.println(list.size());
-            JsonObject event = null;
-            event = getEventResponseSc(nextUrl);
-
-            JsonArray jsonElement = event.getAsJsonArray("txids");
+            JsonObject event = getEventResponseSc(nextUrl);
+            JsonArray jsonElement = event.getAsJsonArray("tx");
             for (JsonElement element : jsonElement) {
-                if (list.size() >= 2000) {
-                    System.out.println("Last Uri " + nextUrl);
-                    System.out.println(event.get("prev_block_url").getAsJsonPrimitive().getAsString());
-                    return list;
-//                    nextUrl = event.get("prev_block_url").getAsJsonPrimitive().getAsString();
-                }
-                list.add(element.getAsString());
+                eventsRepository.saveAll(new TxParser().getEqualInputs(element));
             }
-            if (!event.get("next_txids").getAsJsonPrimitive().getAsString().isEmpty() || event.get("next_txids").getAsJsonPrimitive().getAsString() != null) {
-                nextUrl = event.get("next_txids").getAsJsonPrimitive().getAsString();
-            } else if (!event.get("prev_block_url").getAsJsonPrimitive().getAsString().isEmpty() || event.get("prev_block_url").getAsJsonPrimitive().getAsString() != null){
-                nextUrl = event.get("prev_block_url").getAsJsonPrimitive().getAsString();
-            }  else {
+            if (!event.get("next_block").getAsJsonArray().get(0).getAsString().isEmpty() || event.get("next_block").getAsJsonArray().get(0).getAsString() != null) {
+                nextUrl = uri + event.get("next_block").getAsJsonArray().get(0).getAsString();
+                block1.setLastBlock(event.get("next_block").getAsJsonArray().get(0).getAsString());
+                blockRepository.save(block1);
+            } else {
                 nextUrl = null;
             }
         }
-        return list.isEmpty() ? Collections.emptyList() : list;
     }
 
     public JsonObject getEventResponseSc(String uri) {
@@ -66,7 +61,6 @@ public class UserServiceImpl {
                 URIBuilder uriBuilder = new URIBuilder(uri);
 
                 HttpGet get = new HttpGet(uriBuilder.build());
-                get.setHeader("X-Ratelimit-Remaining","0b6c36c61250419fb0ffc3125da3850d");
 
                 try (CloseableHttpResponse response = httpClient.execute(get)) {
                     int statusCode = response.getStatusLine().getStatusCode();
